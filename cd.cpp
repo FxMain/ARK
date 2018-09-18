@@ -6,6 +6,7 @@ cd::cd(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::cd)
 {
+    //git
     setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowCloseButtonHint);
     setAutoFillBackground(true);//必须有这条语句
     setPalette(QPalette(QColor(140,140,140)));
