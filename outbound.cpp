@@ -27,10 +27,10 @@ outbound::outbound(QWidget *parent) :
 
 
 
-    model=new QStandardItemModel(this);
-    model->setColumnCount(1);
-    model->setHeaderData(0,Qt::Horizontal,QString::fromUtf8("ID"));
-    ui->tableView->setModel(model);
+    tableViewModel=new QStandardItemModel(this);
+    tableViewModel->setColumnCount(1);
+    tableViewModel->setHeaderData(0,Qt::Horizontal,QString::fromUtf8("ID"));
+    ui->tableView->setModel(tableViewModel);
 
 
 
@@ -75,17 +75,17 @@ void outbound::showConnection()
     count++;
     //定义item
     QStandardItem* item = 0;
-    int _rowCount=model->rowCount()-1;
+    int _rowCount=tableViewModel->rowCount()-1;
     if(_rowCount<0){
 
         _rowCount=0;
     }else{
-        _rowCount=model->rowCount();
+        _rowCount=tableViewModel->rowCount();
     }
 
     item = new QStandardItem(QString("%1").arg(server->socketList.last()));
-    model->setItem(_rowCount,0,item);
-    ui->tableView->setModel(model);
+    tableViewModel->setItem(_rowCount,0,item);
+    ui->tableView->setModel(tableViewModel);
     ui->tableView->show();
 
 
@@ -99,15 +99,15 @@ void outbound::showDisconnection(int socketDescriptor)
     server->socketList.removeAll(socketDescriptor);
 
     /* reload combobox */
-    model->clear();//清空列表
+    tableViewModel->clear();//清空列表
     QStandardItem* item = 0;
     for (int i = 0; i < server->socketList.size(); i++) {
 
         item = new QStandardItem(QString("%1").arg(server->socketList.at(i)));
-        model->setItem(i,0,item);
+        tableViewModel->setItem(i,0,item);
 
     }
-     ui->tableView->setModel(model);
+     ui->tableView->setModel(tableViewModel);
 
 }
 
@@ -123,8 +123,8 @@ void outbound::sendMsg()
     if(_row==-1){
       return;
     }
-    QModelIndex index = model->index(_row,0);
-    QString _id = model->data(index).toString();
+    QModelIndex index = tableViewModel->index(_row,0);
+    QString _id = tableViewModel->data(index).toString();
 
     emit sendData(send.toLocal8Bit(), _id.toInt());
 
@@ -152,8 +152,8 @@ void outbound::sendLoopMessage()
     if(_row==-1){
       return;
     }
-    QModelIndex index = model->index(_row,0);
-    QString _id = model->data(index).toString();
+    QModelIndex index = tableViewModel->index(_row,0);
+    QString _id = tableViewModel->data(index).toString();
 
    emit sendData(send.toLocal8Bit(), _id.toInt());
 }

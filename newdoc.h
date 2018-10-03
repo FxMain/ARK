@@ -38,7 +38,7 @@ private:
      Ui::newdoc *ui;
      QString hetonhao1,weituobumen2,weituoren3,baoguanyapingming4,baoguanyapinghao5,baoguanwujiazhi6,wupingliebiao7,dianzibiaoqian8,rq9;
      QString name,sex,number;
-     QStandardItemModel  *model;
+     QStandardItemModel  *tableViewModel;
 
 
 };

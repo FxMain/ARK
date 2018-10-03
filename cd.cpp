@@ -1,7 +1,10 @@
 #include "cd.h"
 #include "ui_cd.h"
 
-
+QSqlQuery query;
+QSqlDatabase db;
+QSqlQueryModel *model;
+extern QString LandingRole;
 cd::cd(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::cd)
@@ -37,11 +40,14 @@ cd::cd(QWidget *parent) :
     ui->pushButton_export->hide();
     ui->pushButton_OrganizationMangement->hide();
     ui->pushButton_Statistical->hide();
+     qDebug() <<"登陆角色:"+LandingRole;
+
 }
 
 cd::~cd()
 {
     delete ui;
+    db.close();
 }
 void cd::resizeEvent(QResizeEvent *event){
 
@@ -51,8 +57,8 @@ void cd::resizeEvent(QResizeEvent *event){
 
     int WS=width()-(ui->pushButton_newdoc->x()+ui->pushButton_newdoc->width());
     WM=WM+0.02*WS;
-    WS=WS*(1-0.04);
-    int HS=height()*(1-0.08);
+    WS=WS*(1.0-0.04);
+    int HS=height()*(1.0-0.08);
 
     usenewdoc->move(WM,HM);             //移动位置
     usenewdoc->setFixedSize(WS,HS);  //设置窗体大小
@@ -155,6 +161,11 @@ void cd::on_pushButton_Statistical_clicked()// 6
 
 void cd::on_pushButton_userManagement_clicked()// 7
 {
+    if(LandingRole!="管理员")
+    {
+        QMessageBox::information(this,"警告!","您不是管理员！");
+        return;
+    }
     usenewdoc->hide();
     usearchivesdoc->hide();
     useoutbound->hide();

@@ -31,13 +31,12 @@ private slots:
 
     void on_pushButton_5_clicked();
 
+    void on_pushButton_clicked();
+
 private:
     void dbshow();
     Ui::usermanagement *ui;
 
-//    QSqlQuery usequery;
-//    QSqlDatabase usedb;
-//    QSqlQueryModel *usemodel;
     QString yonghu,mima,juese,shengfengzheng,zhiwen,renlianshibie;
 };
 

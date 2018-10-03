@@ -68,7 +68,7 @@ private:
     Server *server;
     QTimer *timer;
 
-    QStandardItemModel  *model;
+    QStandardItemModel  *tableViewModel;
 
     QTcpSocket *socket;
 

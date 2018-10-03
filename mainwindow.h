@@ -3,6 +3,18 @@
 
 #include <QMainWindow>
 
+#include <QtSql/QSql>
+#include <QtSql/QSqlDatabase>
+#include <QtSql/qsqlquerymodel.h>
+#include <QSqlQuery>
+#include <QSqlQueryModel>
+#include <QStandardItemModel>
+#include <QDebug>
+#include <QMessageBox>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
+
 namespace Ui {
 class MainWindow;
 }
