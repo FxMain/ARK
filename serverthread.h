@@ -26,10 +26,13 @@ signals:
     void sendDat(QByteArray data, int id);
     void disconnectTCP(int );
 
+
 private slots:
     void sendData(QByteArray data, int id);
     void recvData(QString, QByteArray);
     void disconnectToHost();
+
+
 
 private:
     MySocket *socket;

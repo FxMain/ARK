@@ -48,14 +48,6 @@ private slots:
 private:
     Ui::cd *ui;
 
-    newdoc *usenewdoc;
-    archivesdoc *usearchivesdoc;
-    outbound *useoutbound;
-    inventory *useinventory;
-    fileexport *usefileexport;
-    statistical *usestatistical;
-    usermanagement *useusermanagement;
-    organizationmangement *useorganizationmangement;
 
     void resizeEvent(QResizeEvent * event);
 };

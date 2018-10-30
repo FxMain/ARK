@@ -22,7 +22,7 @@ void MySocket::recvData()
     data = readAll();
 
     QString temp = peerAddress().toString();
-    peerAddr = temp.remove(0, 7);
+    peerAddr = temp.remove(0, 7)+"|"+QString::number(socketDescriptor);//返回地址加线程号
 
     emit revData(peerAddr, data);
 }

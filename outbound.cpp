@@ -1,6 +1,23 @@
 #include "outbound.h"
 #include "ui_outbound.h"
 #include <Qdebug>
+#include <QStringList>
+
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QMessageBox>
+
+extern QSqlDatabase db;
+extern QSqlQueryModel *model;
+extern QSqlQuery query;
+extern QString CabinetCommunicationIp;//主机柜IP
+extern QString CabinetCommunicationId;//主机柜当前通信ID
+Server *server;
+
+QByteArray CabinetCommunicationCdata;
+
+QByteArray CabinetCommunicationTdata;
 outbound::outbound(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::outbound)
@@ -16,9 +33,11 @@ outbound::outbound(QWidget *parent) :
 
 
     server = new Server(this);
+    timer=new QTimer(this);
     server->listen(QHostAddress::Any, 1994);
-    //connect(timer, SIGNAL(timeout()), this, SLOT(sendLoopMessage()));
 
+    connect(timer, SIGNAL(timeout()), this, SLOT(sendLoopMessage()));
+    timer->start(1);
 
     socket = new QTcpSocket();
     //连接信号槽
@@ -27,9 +46,12 @@ outbound::outbound(QWidget *parent) :
 
 
 
+
+
     tableViewModel=new QStandardItemModel(this);
-    tableViewModel->setColumnCount(1);
-    tableViewModel->setHeaderData(0,Qt::Horizontal,QString::fromUtf8("ID"));
+    tableViewModel->setColumnCount(2);
+    tableViewModel->setHeaderData(0,Qt::Horizontal,QString::fromUtf8("IP"));
+    tableViewModel->setHeaderData(1,Qt::Horizontal,QString::fromUtf8("ID"));
     ui->tableView->setModel(tableViewModel);
 
 
@@ -39,7 +61,7 @@ outbound::outbound(QWidget *parent) :
 outbound::~outbound()
 {
     delete ui;
-    delete this->socket;
+    delete socket;
 }
 
 QString outbound::getHostIpAddress()
@@ -70,11 +92,11 @@ void outbound::on_pushButton_clicked()
 }
 
 
-void outbound::showConnection()
+void outbound::showConnection()//客户进入
 {
     count++;
     //定义item
-    QStandardItem* item = 0;
+    QStandardItem* item;
     int _rowCount=tableViewModel->rowCount()-1;
     if(_rowCount<0){
 
@@ -84,14 +106,16 @@ void outbound::showConnection()
     }
 
     item = new QStandardItem(QString("%1").arg(server->socketList.last()));
-    tableViewModel->setItem(_rowCount,0,item);
+
+
+    tableViewModel->setItem(_rowCount,1,item);
     ui->tableView->setModel(tableViewModel);
     ui->tableView->show();
 
 
 }
 
-void outbound::showDisconnection(int socketDescriptor)
+void outbound::showDisconnection(int socketDescriptor)//客户退出
 {
     count--;
 
@@ -104,7 +128,7 @@ void outbound::showDisconnection(int socketDescriptor)
     for (int i = 0; i < server->socketList.size(); i++) {
 
         item = new QStandardItem(QString("%1").arg(server->socketList.at(i)));
-        tableViewModel->setItem(i,0,item);
+        tableViewModel->setItem(i,1,item);
 
     }
      ui->tableView->setModel(tableViewModel);
@@ -113,49 +137,98 @@ void outbound::showDisconnection(int socketDescriptor)
 
 
 
-void outbound::sendMsg()
+void outbound::sendMsg(QByteArray data, int id)//发送数据给指定一个客户
 {
+    emit sendData(data, id);
 
-    QString send="send";
+}
+void outbound::IPIDtableView(QString peerAddr)
+{
+    QStandardItem* item;
 
 
-    int _row=ui->tableView->currentIndex().row();
-    if(_row==-1){
-      return;
+
+    QString IPP=peerAddr.section('|',0,0);
+
+    QString IDD=peerAddr.section('|',1);
+    //qDebug() <<"IPP:"<<IPP<<"IDD:"<<IDD;
+    for (int i = 0; i < server->socketList.size(); i++) {
+        QString IDDD=QString("%1").arg(server->socketList.at(i));
+
+
+
+        //QString nr = tableViewModel->data(index).toString();
+        //tem = new QStandardItem(IDDD);
+        //tableViewModel->setItem(i,1,item);
+        if(IDDD==IDD){
+            QModelIndex index = tableViewModel->index(i,0);//第I行第一列的数据
+            QString IPPP=tableViewModel->data(index).toString();
+            if(IPPP!=IPP)
+            {
+                item = new QStandardItem(IPP);
+                tableViewModel->setItem(i,0,item);
+                ui->tableView->setModel(tableViewModel);
+            }
+
+            return;
+        }
     }
-    QModelIndex index = tableViewModel->index(_row,0);
-    QString _id = tableViewModel->data(index).toString();
 
-    emit sendData(send.toLocal8Bit(), _id.toInt());
 
 }
 
-
-void outbound::revData(QString peerAddr, QByteArray data)
+void outbound::revData(QString peerAddr, QByteArray data)//客户端数据到达
 {
 
-    QString msg;
+    //QString msg;
+    qDebug() <<peerAddr<<":"<<data;
+    IPIDtableView(peerAddr);
 
-    msg = QString::fromLocal8Bit(data);
-    peerAddr.insert(peerAddr.size(), ": ");
-    msg.prepend(peerAddr);
+    QString CIP=peerAddr.section('|',0,0);//得到数据所属客户端IP
+    QString CID=peerAddr.section('|',1);
+    //qDebug() <<"CIP:" <<CIP<<"CID:" <<CID;
+    if(CIP==CabinetCommunicationIp)//如果是主机柜发来的
+    {
+        CabinetCommunicationId=CID;
+        if(data.size()>=3)
+        {
+            //QByteRef
+            QByteArray c;
+            c[0]=0xAA;
+            c[1]=0xAF;
+            if( data.count(c)>0)
+            {
+                //goto xtb;
+            }
 
-    qDebug() << msg;
+        }
+        CabinetCommunicationCdata+=data;
+
+        qDebug() <<"CabinetCommunicationCdata:"<<CabinetCommunicationCdata.toHex('/');
+    }
+//xtb:
+    ;
+    //qDebug() <<"IPP:"<<IPP<<"IDD:"<<IDD;
+
+    //msg = QString::fromLocal8Bit(data);
+    //peerAddr.insert(peerAddr.size(), ": ");
+    //msg.prepend(peerAddr);
+
+    //qDebug() << msg;
 
 }
 
 void outbound::sendLoopMessage()
 {
-    QString send="send2";
+   if(CabinetCommunicationTdata.size()<=0)
+   {
 
-    int _row=ui->tableView->currentIndex().row();
-    if(_row==-1){
-      return;
-    }
-    QModelIndex index = tableViewModel->index(_row,0);
-    QString _id = tableViewModel->data(index).toString();
+       return;
+   }
 
-   emit sendData(send.toLocal8Bit(), _id.toInt());
+   emit sendData(CabinetCommunicationTdata,CabinetCommunicationId.toInt());
+    qDebug()<<"T";
+   CabinetCommunicationTdata.clear();
 }
 
 void outbound::stopLoopSend()
@@ -166,7 +239,18 @@ void outbound::stopLoopSend()
 
 void outbound::on_pushButton_3_clicked()//刷新/查询
 {
-    sendMsg();
+    QString send="send";
+
+    qDebug()<<"刷新/查询";
+    int _row=ui->tableView->currentIndex().row();//选中
+    qDebug()<<"刷新/查询"<<_row;
+    if(_row==-1){
+      return;
+    }
+    QModelIndex index = tableViewModel->index(_row,1);
+    QString _id = tableViewModel->data(index).toString();
+    qDebug()<<"_id"<<_id;
+    sendMsg(send.toLocal8Bit(),_id.toInt());
 }
 /**********************************************客户端部分*******************************************************/
 void outbound::onConnect_clicked(QString Connect)
@@ -204,7 +288,7 @@ void outbound::onConnect_clicked(QString Connect)
 }
 
 
-void outbound::socket_Read_Data()
+void outbound::socket_Read_Data()//服务器数据到达
 {
     QByteArray buffer;
     //读取缓冲区数据
@@ -212,9 +296,17 @@ void outbound::socket_Read_Data()
     if(!buffer.isEmpty())
     {
         QString str = tr(buffer);
-        qDebug() << str;
+        //qDebug() << buffer.data();
 
     }
+    /*char *cbuf;
+    int i=socket->read(cbuf,1);
+    qDebug() <<i;
+    i=socket->read(cbuf,1);
+    qDebug() <<i;
+    i=socket->read(cbuf,1);
+    qDebug() <<i;*/
+
 }
 
 void outbound::socket_Disconnected()
@@ -227,4 +319,110 @@ void outbound::socket_Disconnected()
 void outbound::on_pushButton_2_clicked()
 {
     onConnect_clicked("连接");
+}
+
+void outbound::on_pushButton_5_clicked()//设置主机柜IP
+{
+
+
+    //查询有没有该条类型数据，有先删除再添加-----------------------
+    QString Qfind="SELECT * FROM socket WHERE type='cabinet'";
+    query = QSqlQuery(db);
+    if(!query.exec(Qfind))
+    {
+        qDebug()<<query.lastError();
+    }
+    else
+    {
+        QString ip="";
+        QString type="";
+        QString other="";
+        while(query.next())
+        {
+            ip = query.value(0).toString();
+            type = query.value(1).toString();
+            other = query.value(2).toString();
+
+
+        }
+        if(ip.isEmpty()||type.isEmpty()||other.isEmpty())
+        {
+            //QMessageBox::warning(this,"提示","还没有该数据");
+            //return;
+        }else {
+
+            query.prepare(QString("delete from socket where type = ?"));
+            query.addBindValue("cabinet");
+            if(! query.exec())
+            {
+                  qDebug() << query.lastError();
+            }
+            else
+            {
+                  //qDebug() << "inserted Wang!";
+                    QMessageBox::warning(this,"提示","删除原来数据，添加新的数据");
+
+            }
+        }
+
+    }
+
+
+    //添加数据---------------------------------------
+    QString insert_buf;
+    insert_buf=QString("insert into socket values('%1','%2','%3')").arg(ui->lineEdit_4->text(),"cabinet","|");
+    //qDebug()<<insert_buf;
+
+    if(ui->lineEdit_4->text().isEmpty())
+    {
+        QMessageBox::warning(this,"Incomplete information","error");
+        return;
+    }
+
+    if(! query.exec(insert_buf))
+    {
+          qDebug() << query.lastError();
+    }
+    else
+    {
+          qDebug() << "inserted Wang!";
+          CabinetCommunicationIp=ui->lineEdit_4->text();
+          QMessageBox::warning(this,"提示","设置成功");
+
+    }
+}
+
+void outbound::on_pushButton_4_clicked()//查询主机柜IP
+{
+
+
+     QString Qfind="SELECT * FROM socket WHERE type='cabinet'";
+     query = QSqlQuery(db);
+     if(!query.exec(Qfind))
+     {
+         qDebug()<<query.lastError();
+     }
+     else
+     {
+         QString ip="";
+         QString type="";
+         QString other="";
+         while(query.next())
+         {
+             ip = query.value(0).toString();
+             type = query.value(1).toString();
+             other = query.value(2).toString();
+             //qDebug()<<QString("用户名:%1,密码:%2,角色:%3").arg(u).arg(p).arg(s);
+
+         }
+         if(ip.isEmpty()||type.isEmpty()||other.isEmpty())
+         {
+              QMessageBox::warning(this,"提示","还没有该数据");
+             return;
+         }else {
+
+             ui->lineEdit_4->setText(ip);
+         }
+
+     }
 }

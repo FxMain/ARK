@@ -5,9 +5,9 @@
 
 #include "serverthread.h"
 #include "outbound.h"
-
+#include "newdoc.h"
 class outbound;
-
+class newdoc;
 class Server : public QTcpServer
 {
     Q_OBJECT
@@ -17,6 +17,7 @@ public:
 
 public:
     QList<int> socketList;
+    QList<QString> socketLists;
 
 private:
     void incomingConnection(int socketDescriptor);
@@ -25,6 +26,7 @@ private slots:
 
 private:
     outbound *dialog;
+    newdoc   *dialognewdoc;
 
 };
 

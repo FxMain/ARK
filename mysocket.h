@@ -18,6 +18,7 @@ public slots:
     void recvData();
     void sendMsg(QByteArray msg, int id);
 
+
 private:
     int socketDescriptor;
 };

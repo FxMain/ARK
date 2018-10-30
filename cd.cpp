@@ -4,6 +4,16 @@
 QSqlQuery query;
 QSqlDatabase db;
 QSqlQueryModel *model;
+
+newdoc *usenewdoc;
+archivesdoc *usearchivesdoc;
+outbound *useoutbound;
+inventory *useinventory;
+fileexport *usefileexport;
+statistical *usestatistical;
+usermanagement *useusermanagement;
+organizationmangement *useorganizationmangement;
+
 extern QString LandingRole;
 cd::cd(QWidget *parent) :
     QDialog(parent),
@@ -25,7 +35,7 @@ cd::cd(QWidget *parent) :
     useorganizationmangement=new organizationmangement(this);
 
     usenewdoc->hide();
-    usearchivesdoc->hide();
+    //usearchivesdoc->hide();
     useoutbound->hide();
     useinventory->hide();
     usefileexport->hide();
@@ -41,6 +51,9 @@ cd::cd(QWidget *parent) :
     ui->pushButton_OrganizationMangement->hide();
     ui->pushButton_Statistical->hide();
      qDebug() <<"登陆角色:"+LandingRole;
+    //IGNAL(sendDatanewdoc(QByteArray, int)), dialog, SLOT(sendMsg(QByteArray, int)));
+
+     connect(usenewdoc,SIGNAL(sendDatanewdoc(QByteArray, int)),useoutbound,SLOT(sendMsg(QByteArray, int)));//当点击子界面时，调用主界面的reshow()函
 
 }
 
@@ -164,7 +177,7 @@ void cd::on_pushButton_userManagement_clicked()// 7
     if(LandingRole!="管理员")
     {
         QMessageBox::information(this,"警告!","您不是管理员！");
-        return;
+        //return;
     }
     usenewdoc->hide();
     usearchivesdoc->hide();

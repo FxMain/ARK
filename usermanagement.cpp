@@ -83,7 +83,7 @@ void usermanagement::on_pushButton_6_clicked()//新增按钮事件
 
 }
 
-void usermanagement::on_pushButton_5_clicked()
+void usermanagement::on_pushButton_5_clicked()//删除
 {
 
 
